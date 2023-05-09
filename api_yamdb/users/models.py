@@ -58,5 +58,10 @@ class User(AbstractUser):
             )
         ]
 
+    @property
+    def is_admin(self):
+        """Возвращает True, если пользователь является администратором."""
+        return self.role == "admin"
+
     def __str__(self):
         return self.username
