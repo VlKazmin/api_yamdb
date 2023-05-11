@@ -14,27 +14,27 @@ def validate_me(data):
 
 def validate_username(data):
     """
-    Проверка, что email уникален.
+    Проверка уникальности username.
     """
-    username = data.get("username")
-    email = data.get("email")
+    username = data["username"]
+    email = data["email"]
 
-    if User.objects.exclude(username=username).filter(email=email).exists():
+    if User.objects.exclude(email=email).filter(username=username).exists():
         raise serializers.ValidationError(
-            f"Пользователь с почтой '{email}' уже существует"
+            "Пользователь с таким именем уже существует."
         )
     return data
 
 
 def validate_email(data):
     """
-    Проверка, что username уникально.
+    Проверка уникальности email.
     """
-    username = data.get("username")
-    email = data.get("email")
+    username = data["username"]
+    email = data["email"]
 
-    if User.objects.exclude(email=email).filter(username=username).exists():
+    if User.objects.exclude(username=username).filter(email=email).exists():
         raise serializers.ValidationError(
-            f"Пользователь с именем '{username}' уже существует"
+            "Пользователь с таким email уже существует."
         )
     return data
