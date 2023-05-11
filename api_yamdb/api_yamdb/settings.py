@@ -26,9 +26,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
 
-    #'api.apps.ApiConfig',
-    # 'users.apps.UsersConfig',
-    # 'reviews.apps.ReviewsConfig',
+    'api.apps.ApiConfig',
+    'users.apps.UsersConfig',
+    'reviews.apps.ReviewsConfig',
 ]
 
 MIDDLEWARE = [
@@ -41,7 +41,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = 'users.User'
 
 ROOT_URLCONF = 'api_yamdb.urls'
 
