@@ -26,9 +26,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
 
-    'api.apps.ApiConfig',
-    'users.apps.UsersConfig',
-    'reviews.apps.ReviewsConfig',
+    #'api.apps.ApiConfig',
+    # 'users.apps.UsersConfig',
+    # 'reviews.apps.ReviewsConfig',
 ]
 
 MIDDLEWARE = [
@@ -41,7 +41,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-AUTH_USER_MODEL = 'users.User'
+# AUTH_USER_MODEL = 'users.User'
 
 ROOT_URLCONF = 'api_yamdb.urls'
 
@@ -115,7 +115,7 @@ STATICFILES_DIRS = ((BASE_DIR / 'static/'),)
 # Настройка почтового сервера
 # filebase в EMAIL_BACKEND можно заменить на console
 # для вывода сообщений в консоль.
-EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
 EMAIL_HOST_USER = 'fake@mail.ru'
 
