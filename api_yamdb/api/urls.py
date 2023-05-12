@@ -2,12 +2,22 @@ from django.urls import include, path
 
 from rest_framework import routers
 
-from .views import UserCreateViewSet, UserGetTokenViewSet, UserViewSet
+from .views import (CommentViewSet, ReviewViewSet, UserCreateViewSet,
+                    UserGetTokenViewSet, UserViewSet)
 
 app_name = 'api'
 
 router_v1 = routers.DefaultRouter()
+
 router_v1.register(r"users", UserViewSet, basename="users")
+router_v1.register(
+    r'titles/(?P<title_id>\d+)/reviews', ReviewViewSet, basename='reviews'
+)
+router_v1.register(
+    r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
+    CommentViewSet,
+    basename='comments'
+)
 
 
 auth_router_v1 = routers.SimpleRouter()
