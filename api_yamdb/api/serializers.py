@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from users.models import User
-from reviews.models import Comment, Review
+from reviews.models import Comment, Review, Genre, Title, Category
 from .validators import validate_me, validate_email, validate_username
 
 
@@ -62,18 +62,17 @@ class UserSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Review."""
-
     author = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Review
-        fields = ("id", "text", "author", "score", "created")
+        fields = ('id', 'text', 'author', 'score', 'created')
 
     def validate(self, data):
-        if self.context["request"].method != "POST":
+        if self.context['request'].method != 'POST':
             return data
-        title_id = self.context["view"].kwargs.get("title_id")
-        author = self.context["request"].user
+        title_id = self.context['view'].kwargs.get('title_id')
+        author = self.context['request'].user
         if Review.objects.filter(author=author, title=title_id).exists():
             raise serializers.ValidationError
         return data
@@ -81,10 +80,36 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Comment."""
-
     author = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Comment
-        fields = ("id", "text", "author", "created")
-        read_only_fields = ("id", "created")
+        fields = ('id', 'text', 'author', 'created')
+        read_only_fields = ('id', 'created')
+
+
+class CategorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        fields = ('name', 'slug')
+        model = Category
+
+
+class GenreSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        fields = ('name', 'slug')
+        model = Genre
+
+
+class TitleSerializer(serializers.ModelSerializer):
+    rating = serializers.IntegerField()
+    category = CategorySerializer()
+    genre = GenreSerializer(many=True)
+
+    class Meta:
+        model = Title
+        fields = (
+            'id', 'rating', 'name', 'year', 'description', 'genre', 'category'
+        )
+        read_only_fields = ('__all__',)
