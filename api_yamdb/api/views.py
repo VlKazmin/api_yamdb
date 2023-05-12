@@ -1,53 +1,46 @@
-from django.db.models import Avg
 from django.core.exceptions import ValidationError
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.response import Response
+
+# from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.pagination import (
     LimitOffsetPagination,
     PageNumberPagination,
 )
-from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
-from permissions import AdminModeratorAuthorPermission
 
-from .serializers import (
-    UserCreateSerializer,
-    JwtTokenSerializer,
-    ReviewSerializer,
-    CommentSerializer,
-)
-from reviews.models import Review
+from reviews.models import Category, Genre, Review, Title
 from users.models import User
-from .utils import send_confirmation_code, generate_confirm_code
-from .viewsets import CreateDestroyListViewSet
-from .permissions import IsAdmin, ReadOnly
-from reviews.models import Category, Genre, Title
+
+from .filters import TitleFilter
+from .permissions import (
+    AdminModeratorAuthorPermission,
+    IsAdmin,
+    ReadOnly,
+    SuperUserOrAdmin,
+)
 from .serializers import (
     CategorySerializer,
-    GenreSerializer,
-    TitleSerializer,
-    TitleCreateUpdateSerializer,
-)
-from .filters import TitleFilter
-
-from .permissions import AdminModeratorAuthorPermission, SuperUserOrAdmin
-from .serializers import (
     CommentSerializer,
+    GenreSerializer,
     JwtTokenSerializer,
     ReviewSerializer,
+    TitleSerializer,
     UserCreateSerializer,
     UserSerializer,
+    TitleCreateUpdateSerializer,
 )
 from .utils import generate_confirm_code, send_confirmation_code
+from .mixins import CreateDestroyListViewSet
 
 
 class UserCreateViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
-    """Вьюсет для создания пользователя."""
+    """Представление для создания пользователя."""
 
     queryset = User.objects.all()
     serializer_class = UserCreateSerializer
@@ -79,7 +72,8 @@ class UserCreateViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
 
 class UserGetTokenViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
-    """Вьюсет для создания JWT-токена и отправки кода для его получения."""
+    """Представление  для создания JWT-токена и
+    отправки кода для его получения."""
 
     queryset = User.objects.all()
     serializer_class = JwtTokenSerializer
@@ -110,7 +104,7 @@ class UserGetTokenViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
 class UserViewSet(viewsets.ModelViewSet):
     """
-    Вьюсет для управления пользователями.
+    Представление  для управления пользователями.
     """
 
     queryset = User.objects.all()
@@ -150,38 +144,56 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class CategoryGenreViewSet(CreateDestroyListViewSet):
+    """
+    Базовый класс для представлений категорий и жанров.
+    """
+
     pagination_class = PageNumberPagination
-    filter_backends = (SearchFilter,)
-    search_fields = ("name",)
-    permission_classes = (IsAdmin | ReadOnly,)
+    filter_backends = [filters.SearchFilter]
+    http_method_names = ["post", "get", "delete"]
+    search_fields = ["name"]
+    permission_classes = [
+        SuperUserOrAdmin | ReadOnly,
+    ]
+
     lookup_field = "slug"
 
 
 class CategoryViewSet(CategoryGenreViewSet):
+    """
+    Представление для категорий.
+    """
+
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
 
 class GenreViewSet(CategoryGenreViewSet):
+    """
+    Представление для жанров.
+    """
+
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all().annotate(rating=Avg("reviews__score")).all()
+    # зачем определять класс сериализотра если ты его
+    # определяешь в get_serializer_class ??
     serializer_class = TitleSerializer
     pagination_class = PageNumberPagination
     permission_classes = (IsAdmin | ReadOnly,)
     filter_backends = (
         DjangoFilterBackend,
-        OrderingFilter,
+        filters.OrderingFilter,
     )
     filterset_class = TitleFilter
     ordering_fields = ("name",)
 
     def get_serializer_class(self):
-        if self.action == "create" or self.action == "partial_update":
-            return TitleCreateUpdateSerializer
+        if self.action in ("create", "partial_update"):
+            return TitleCreateUpdateSerializer  # нужно дописать
         return TitleSerializer
 
 
@@ -207,78 +219,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     """Вьюсет для  для создания, просмотра,
     обновления и удаления комментария
     """
-
-    serializer_class = CommentSerializer
-    permission_classes = (AdminModeratorAuthorPermission,)
-
-    def get_review(self):
-        review_id = self.kwargs.get("review_id")
-        return get_object_or_404(Review, pk=review_id)
-
-    def get_queryset(self):
-        return self.get_review().comments.all()
-
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user, review=self.get_review())
-
-
-class ReviewViewSet(viewsets.ModelViewSet):
-    """Вьюсет для  для создания, просмотра, обновления и удаления отзывов"""
-
-    serializer_class = ReviewSerializer
-    permission_classes = (AdminModeratorAuthorPermission,)
-    pagination_class = LimitOffsetPagination
-
-    def get_title(self):
-        title_id = self.kwargs.get("title_id")
-        return get_object_or_404(Title, pk=title_id)
-
-    def get_queryset(self):
-        return self.get_title().reviews.all()
-
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user, title=self.get_title())
-
-
-class CommentViewSet(viewsets.ModelViewSet):
-    """Вьюсет для  для создания, просмотра,
-    обновления и удаления комментария"""
-
-    serializer_class = CommentSerializer
-    permission_classes = (AdminModeratorAuthorPermission,)
-
-    def get_review(self):
-        review_id = self.kwargs.get("review_id")
-        return get_object_or_404(Review, pk=review_id)
-
-    def get_queryset(self):
-        return self.get_review().comments.all()
-
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user, review=self.get_review())
-
-
-class ReviewViewSet(viewsets.ModelViewSet):
-    """Вьюсет для  для создания, просмотра, обновления и удаления отзывов"""
-
-    serializer_class = ReviewSerializer
-    permission_classes = (AdminModeratorAuthorPermission,)
-    pagination_class = LimitOffsetPagination
-
-    def get_title(self):
-        title_id = self.kwargs.get("title_id")
-        return get_object_or_404(Title, pk=title_id)
-
-    def get_queryset(self):
-        return self.get_title().reviews.all()
-
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user, title=self.get_title())
-
-
-class CommentViewSet(viewsets.ModelViewSet):
-    """Вьюсет для  для создания, просмотра,
-    обновления и удаления комментария"""
 
     serializer_class = CommentSerializer
     permission_classes = (AdminModeratorAuthorPermission,)

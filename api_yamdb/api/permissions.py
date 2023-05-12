@@ -11,19 +11,17 @@ class SuperUserOrAdmin(permissions.BasePermission):
         )
 
 
-# class SuperUserOrAdmin(permissions.BasePermission):
-#     def has_permission(self, request, view):
-#         return request.method in permissions.SAFE_METHODS or (
-#             request.user.is_authenticated and (
-#                 request.user.is_admin or request.user.is_superuser
-#             )
-#         )
+class IsAdmin(permissions.BasePermission):
+    # тоже самое, что и выше !! // я бы удалил
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.is_admin
 
 
 class AdminModeratorAuthorPermission(permissions.BasePermission):
     """Доступ только для администратора, модератора и автора объекта."""
 
     def has_permission(self, request, view):
+        # is_moderator - работает??
         if (
             request.method in permissions.SAFE_METHODS
             or request.user.is_authenticated
@@ -44,11 +42,7 @@ class AdminModeratorAuthorPermission(permissions.BasePermission):
         raise AuthenticationFailed("Требуется авторизация")
 
 
-class IsAdmin(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.is_admin
-
-
 class ReadOnly(permissions.BasePermission):
+    # в чем разница ограничения доступа от проверки выше??
     def has_permission(self, request, view):
         return request.method in permissions.SAFE_METHODS
