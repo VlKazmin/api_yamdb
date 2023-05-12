@@ -1,8 +1,56 @@
-from django.contrib.auth import get_user_model
-from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from users.models import User
+from django.core.validators import (
+    MaxValueValidator,
+    MinValueValidator
+)
 
-User = get_user_model()
+
+class Category(models.Model):
+    name = models.CharField(max_length=256)
+    slug = models.SlugField(unique=True, max_length=50)
+
+    class Meta:
+        verbose_name = "Категория"
+        verbose_name_plural = "Категории"
+
+    def __str__(self):
+        return self.name[:20]
+
+
+class Genre(models.Model):
+    name = models.CharField(max_length=256)
+    slug = models.SlugField(unique=True, max_length=50)
+
+    class Meta:
+        verbose_name = "Жанр"
+        verbose_name_plural = "Жанры"
+
+
+class Title(models.Model):
+    name = models.TextField()
+    year = models.PositiveSmallIntegerField()
+    description = models.TextField(blank=True)
+    genre = models.ManyToManyField(
+        Genre,
+        blank=True,
+        related_name="genre",
+    )
+    category = models.ForeignKey(
+        Category,
+        models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="category",
+    )
+
+    class Meta:
+        ordering = ("name",)
+        verbose_name = "Произведение"
+        verbose_name_plural = "Произведения"
+
+    def __str__(self):
+        return self.name[:20]
 
 
 class Review(models.Model):
@@ -37,7 +85,7 @@ class Review(models.Model):
             ),
         )
 
-    def __str__(self):
+    def str(self):
         return self.text
 
 
@@ -64,5 +112,5 @@ class Comment(models.Model):
         verbose_name_plural = "Комментарии"
         ordering = ("-pub_date",)
 
-    def __str__(self):
+    def str(self):
         return self.text
