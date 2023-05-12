@@ -62,17 +62,18 @@ class UserSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Review."""
+
     author = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Review
-        fields = ('id', 'text', 'author', 'score', 'created')
+        fields = ("id", "text", "author", "score", "created")
 
     def validate(self, data):
-        if self.context['request'].method != 'POST':
+        if self.context["request"].method != "POST":
             return data
-        title_id = self.context['view'].kwargs.get('title_id')
-        author = self.context['request'].user
+        title_id = self.context["view"].kwargs.get("title_id")
+        author = self.context["request"].user
         if Review.objects.filter(author=author, title=title_id).exists():
             raise serializers.ValidationError
         return data
@@ -80,8 +81,10 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Comment."""
+
     author = serializers.StringRelatedField(read_only=True)
+
     class Meta:
         model = Comment
-        fields = ('id', 'text', 'author', 'created')
-        read_only_fields = ('id', 'created')
+        fields = ("id", "text", "author", "created")
+        read_only_fields = ("id", "created")
