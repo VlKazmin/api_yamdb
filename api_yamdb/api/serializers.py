@@ -1,9 +1,14 @@
 from rest_framework import serializers
 
-from .validators import validate_email, validate_me, validate_username
-
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
+
+from .validators import (
+    unique_review_validator,
+    validate_email,
+    validate_me,
+    validate_username,
+)
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -78,6 +83,8 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Title."""
+
     rating = serializers.IntegerField()
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
@@ -93,14 +100,21 @@ class TitleSerializer(serializers.ModelSerializer):
             "genre",
             "category",
         )
-        read_only_fields = ("__all__",)
 
 
 class TitleCreateUpdateSerializer(serializers.ModelSerializer):
-    # дописываем
-    rating = serializers.IntegerField()
-    category = CategorySerializer()
-    genre = GenreSerializer(many=True)
+    """
+    Сериализатор для создания и обновления объектов модели Title.
+    """
+
+    name = serializers.CharField(max_length=256)
+    rating = serializers.IntegerField(read_only=True)
+    category = serializers.SlugRelatedField(
+        slug_field="slug", queryset=Category.objects.all()
+    )
+    genre = serializers.SlugRelatedField(
+        slug_field="slug", queryset=Genre.objects.all(), many=True
+    )
 
     class Meta:
         model = Title
@@ -113,7 +127,6 @@ class TitleCreateUpdateSerializer(serializers.ModelSerializer):
             "genre",
             "category",
         )
-        read_only_fields = ("__all__",)
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -123,15 +136,10 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ("id", "text", "author", "score", "created")
+        fields = ("id", "text", "author", "score", "pub_date")
 
     def validate(self, data):
-        if self.context["request"].method != "POST":
-            return data
-        title_id = self.context["view"].kwargs.get("title_id")
-        author = self.context["request"].user
-        if Review.objects.filter(author=author, title=title_id).exists():
-            raise serializers.ValidationError
+        unique_review_validator(self.context, data)
         return data
 
 
@@ -142,5 +150,5 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ("id", "text", "author", "created")
-        read_only_fields = ("id", "created")
+        fields = ("id", "text", "author", "pub_date")
+        read_only_fields = ("id", "pub_date")
