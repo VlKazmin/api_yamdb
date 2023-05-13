@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from reviews.models import Review
 from users.models import User
 
 
@@ -38,3 +39,14 @@ def validate_email(data):
             "Пользователь с таким email уже существует."
         )
     return data
+
+
+def unique_review_validator(context, data):
+    """Валидатор, который проверяет уникальность отзыва
+    для заданного произведения."""
+
+    if context["request"].method == "POST":
+        title_id = context["view"].kwargs.get("title_id")
+        author = context["request"].user
+        if Review.objects.filter(author=author, title=title_id).exists():
+            raise serializers.ValidationError("Отзыв уже существует.")
