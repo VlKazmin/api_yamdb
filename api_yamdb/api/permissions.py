@@ -2,7 +2,7 @@ from rest_framework import permissions
 from rest_framework.exceptions import AuthenticationFailed
 
 
-class SuperUserOrAdmin(permissions.BasePermission):
+class IsSuperUserOrAdmin(permissions.BasePermission):
     """Доступ только для суперпользователи или администратора."""
 
     def has_permission(self, request, view):
@@ -11,17 +11,10 @@ class SuperUserOrAdmin(permissions.BasePermission):
         )
 
 
-class IsAdmin(permissions.BasePermission):
-    # тоже самое, что и выше !! // я бы удалил
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.is_admin
-
-
-class AdminModeratorAuthorPermission(permissions.BasePermission):
+class IsAdminOrModeratorOrAuthor(permissions.BasePermission):
     """Доступ только для администратора, модератора и автора объекта."""
 
     def has_permission(self, request, view):
-        # is_moderator - работает??
         if (
             request.method in permissions.SAFE_METHODS
             or request.user.is_authenticated
@@ -35,14 +28,16 @@ class AdminModeratorAuthorPermission(permissions.BasePermission):
             or request.user.is_authenticated
         ):
             return (
-                (obj.author == request.user)
-                or request.user.is_admin
-                or request.user.is_moderator
+                request.method in permissions.SAFE_METHODS
+                or request.user.role in ["admin", "moderator"]
+                or request.user.is_superuser
+                or obj.author == request.user
             )
         raise AuthenticationFailed("Требуется авторизация")
 
 
 class ReadOnly(permissions.BasePermission):
-    # в чем разница ограничения доступа от проверки выше??
+    """Только чтение."""
+
     def has_permission(self, request, view):
         return request.method in permissions.SAFE_METHODS

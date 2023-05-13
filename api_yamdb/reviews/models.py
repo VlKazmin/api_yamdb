@@ -8,8 +8,6 @@ from users.models import User
 from django.db import models
 from users.models import User
 
-MAX_LENGHT: int = 20
-
 
 class BaseModel(models.Model):
     """
@@ -32,14 +30,10 @@ class BaseModel(models.Model):
     )
 
     class Meta:
-        # это атрибут метакласса Meta в Django модели, который указывает,
-        # что модель является абстрактной. Абстрактная модель не создает
-        # отдельной таблицы в базе данных, она служит как базовый класс
-        # для других моделей.
         abstract = True
 
     def __str__(self):
-        return self.name[MAX_LENGHT]
+        return self.name
 
 
 class Category(BaseModel):
@@ -68,7 +62,6 @@ class Title(models.Model):
     """
 
     name = models.TextField()
-    # вносим ограничение на уровне базы
     year = models.IntegerField(validators=[MinValueValidator(1)])
     description = models.TextField(blank=True)
     genre = models.ManyToManyField(Genre, blank=True, related_name="titles")
@@ -86,7 +79,7 @@ class Title(models.Model):
         verbose_name_plural = "Произведения"
 
     def __str__(self):
-        return self.name[MAX_LENGHT]  # нужно вывести в переменную
+        return self.name
 
 
 class Review(models.Model):
@@ -125,7 +118,7 @@ class Review(models.Model):
         ]
 
     def __str__(self):
-        return self.text[MAX_LENGHT]
+        return self.text
 
 
 class Comment(models.Model):
@@ -156,4 +149,4 @@ class Comment(models.Model):
         ordering = ("-pub_date",)
 
     def __str__(self):
-        return self.text[MAX_LENGHT]
+        return self.text
