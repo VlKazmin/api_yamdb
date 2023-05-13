@@ -1,8 +1,9 @@
 from rest_framework import serializers
 
+from .validators import validate_email, validate_me, validate_username
+
+from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
-from reviews.models import Comment, Review
-from .validators import validate_me, validate_email, validate_username
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -60,8 +61,64 @@ class UserSerializer(serializers.ModelSerializer):
     ]
 
 
+class CategorySerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Category."""
+
+    class Meta:
+        fields = ("name", "slug")
+        model = Category
+
+
+class GenreSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Genre."""
+
+    class Meta:
+        fields = ("name", "slug")
+        model = Genre
+
+
+class TitleSerializer(serializers.ModelSerializer):
+    rating = serializers.IntegerField()
+    category = CategorySerializer()
+    genre = GenreSerializer(many=True)
+
+    class Meta:
+        model = Title
+        fields = (
+            "id",
+            "rating",
+            "name",
+            "year",
+            "description",
+            "genre",
+            "category",
+        )
+        read_only_fields = ("__all__",)
+
+
+class TitleCreateUpdateSerializer(serializers.ModelSerializer):
+    # дописываем
+    rating = serializers.IntegerField()
+    category = CategorySerializer()
+    genre = GenreSerializer(many=True)
+
+    class Meta:
+        model = Title
+        fields = (
+            "id",
+            "rating",
+            "name",
+            "year",
+            "description",
+            "genre",
+            "category",
+        )
+        read_only_fields = ("__all__",)
+
+
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Review."""
+
     author = serializers.StringRelatedField(read_only=True)
 
     class Meta:
@@ -69,10 +126,10 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ('id', 'text', 'author', 'score', 'pub_date')
 
     def validate(self, data):
-        if self.context['request'].method != 'POST':
+        if self.context["request"].method != "POST":
             return data
-        title_id = self.context['view'].kwargs.get('title_id')
-        author = self.context['request'].user
+        title_id = self.context["view"].kwargs.get("title_id")
+        author = self.context["request"].user
         if Review.objects.filter(author=author, title=title_id).exists():
             raise serializers.ValidationError
         return data
@@ -80,7 +137,9 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Comment."""
+
     author = serializers.StringRelatedField(read_only=True)
+
     class Meta:
         model = Comment
         fields = ('id', 'text', 'author', 'pub_date')
