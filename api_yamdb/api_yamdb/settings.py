@@ -46,6 +46,8 @@ AUTH_USER_MODEL = 'users.User'
 ROOT_URLCONF = 'api_yamdb.urls'
 
 TEMPLATES_DIR = BASE_DIR / 'templates'
+CSV_FILES_DIR = BASE_DIR / 'static/data'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
