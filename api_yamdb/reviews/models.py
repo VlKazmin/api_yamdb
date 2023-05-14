@@ -9,10 +9,12 @@ from django.db import models
 from users.models import User
 
 
-class Category(models.Model):
+class BaseModel(models.Model):
     """
-    Модель для категории.
+    Абстрактная базовая модель, содержащая общие поля и
+    валидацию для подклассов.
     """
+
     name = models.CharField(max_length=256)
     slug = models.SlugField(
         unique=True,
@@ -28,28 +30,26 @@ class Category(models.Model):
     )
 
     class Meta:
+        abstract = True
+
+    def __str__(self):
+        return self.name
+
+
+class Category(BaseModel):
+    """
+    Модель для категории.
+    """
+
+    class Meta:
         verbose_name = "Категория"
         verbose_name_plural = "Категории"
 
 
-class Genre(models.Model):
+class Genre(BaseModel):
     """
     Модель для жанра.
     """
-
-    name = models.CharField(max_length=256)
-    slug = models.SlugField(
-        unique=True,
-        max_length=50,
-        validators=[
-            RegexValidator(
-                regex=r"^[-a-zA-Z0-9_]+$",
-                message="Неверное имя пользователя. "
-                "Допускаются только буквы, цифры и знак подчеркивания."
-                " Не может содержать символы «@», «.», «+» или «-».",
-            )
-        ],
-    )
 
     class Meta:
         verbose_name = "Жанр"
