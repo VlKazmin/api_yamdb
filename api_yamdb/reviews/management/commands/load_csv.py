@@ -8,7 +8,8 @@ from users.models import User
 
 from api_yamdb.settings import CSV_FILES_DIR
 
-DICT = {
+
+MODELS_FILES = {
     User: "users.csv",
     Category: "category.csv",
     Genre: "genre.csv",
@@ -31,7 +32,7 @@ def clear(self, *args, **kwargs):
 
 
 def load_csv(self):
-    for model, file in DICT.items():
+    for model, file in MODELS_FILES.items():
         success = f"Таблица {model.__qualname__} успешно загружена."
         error_load = f"Не удалось загрузить таблицу {model.__qualname__}."
         file_path = f"{CSV_FILES_DIR}/{file}"
@@ -47,14 +48,12 @@ def load_csv(self):
                         else:
                             updated_data[key] = value
                     model.objects.create(**updated_data)
-                    continue
                 self.stdout.write(self.style.SUCCESS(success))
 
         except (ValueError, IntegrityError, FileNotFoundError) as error:
             self.stdout.write(
                 self.style.ERROR(f"Ошибка в загрузке. {error}. {error_load}")
             )
-            break
 
 
 class Command(BaseCommand):

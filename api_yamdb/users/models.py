@@ -2,15 +2,13 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.db import models
 
+from .utils import Role
+
 
 class User(AbstractUser):
     """Модель пользователя с расширенным функционалом для Django приложения."""
 
-    ROLE_CHOICES = [
-        ("user", "User"),
-        ("moderator", "Moderator"),
-        ("admin", "Admin"),
-    ]
+    USERNAME_REGEX = r"^[\w]+[^@\.\+\-]*$"
 
     username = models.CharField(
         max_length=150,
@@ -18,7 +16,7 @@ class User(AbstractUser):
         db_index=True,
         validators=[
             RegexValidator(
-                regex=r"^[\w]+[^@\.\+\-]*$",
+                regex=USERNAME_REGEX,
                 message="Неверное имя пользователя. "
                 "Допускаются только буквы, цифры и знак подчеркивания."
                 " Не может содержать символы «@», «.», «+» или «-».",
@@ -44,14 +42,8 @@ class User(AbstractUser):
     role = models.CharField(
         verbose_name="Роль",
         max_length=20,
-        choices=ROLE_CHOICES,
+        choices=Role.get_role_choices(),
         default="user",
-    )
-    confirmation_code = models.CharField(
-        verbose_name="Код подтверждения",
-        max_length=6,
-        blank=True,
-        null=True,
     )
 
     class Meta:
@@ -67,7 +59,7 @@ class User(AbstractUser):
     @property
     def is_admin(self):
         """Возвращает True, если пользователь является администратором."""
-        return self.role == "admin"
+        return self.role == Role.admin.name
 
     def __str__(self):
         return self.username

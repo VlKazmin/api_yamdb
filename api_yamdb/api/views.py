@@ -1,3 +1,4 @@
+from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
@@ -33,7 +34,7 @@ from .serializers import (
     UserCreateSerializer,
     UserSerializer,
 )
-from .utils import generate_confirm_code, send_confirmation_code
+from .utils import send_confirmation_code
 
 
 class UserCreateViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
@@ -51,12 +52,9 @@ class UserCreateViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             user, created = User.objects.get_or_create(
                 **serializer.validated_data
             )
-            confirmation_code = generate_confirm_code()
-            user.confirmation_code = confirmation_code
-            user.save()
             send_confirmation_code(
                 user.email,
-                confirmation_code,
+                default_token_generator,
             )
 
             return Response(
@@ -79,9 +77,7 @@ class UserGetTokenViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         username = serializer.validated_data.get("username")
-        confirmation_code = serializer.validated_data.get("confirmation_code")
 
         try:
             user = self.get_queryset().get(username=username)
@@ -89,9 +85,7 @@ class UserGetTokenViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             message = {"Пользователь не найден."}
             return Response(message, status=status.HTTP_404_NOT_FOUND)
 
-        if User.objects.filter(confirmation_code=confirmation_code).exists():
-            user.confirmation_code = None
-            user.save()
+        if default_token_generator.check_token(user, ""):
             message = {"Ваш token -": str(AccessToken.for_user(user))}
             return Response(message, status=status.HTTP_200_OK)
 
