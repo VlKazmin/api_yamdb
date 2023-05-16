@@ -80,7 +80,7 @@ class UserGetTokenViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         username = serializer.validated_data.get("username")
 
         try:
-            user = self.get_queryset().get(username=username)
+            user = get_object_or_404(User, username=username)
         except User.DoesNotExist:
             message = {"Пользователь не найден."}
             return Response(message, status=status.HTTP_404_NOT_FOUND)
@@ -111,10 +111,8 @@ class UserViewSet(viewsets.ModelViewSet):
         methods=["get", "patch"],
     )
     def me(self, request):
-        """
-        Получение данных о пользователе или внесение изменений
-        в данные о пользователе.
-        """
+        """Получение данных о пользователе."""
+
         serializer = self.get_serializer(
             request.user, data=request.data, partial=True
         )
@@ -137,7 +135,6 @@ class CategoryGenreViewSet(CreateDestroyListViewSet):
 
     pagination_class = PageNumberPagination
     filter_backends = [filters.SearchFilter]
-    http_method_names = ["post", "get", "delete"]
     search_fields = ["name"]
     permission_classes = [
         IsSuperUserOrAdmin | ReadOnly,
@@ -166,7 +163,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.annotate(rating=Avg("reviews__score")).all()
     pagination_class = PageNumberPagination
     permission_classes = (IsSuperUserOrAdmin | ReadOnly,)
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
     ordering_fields = ["name"]
 
